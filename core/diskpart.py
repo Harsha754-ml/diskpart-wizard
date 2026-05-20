@@ -6,12 +6,17 @@
 import os
 import subprocess
 import tempfile
+import time
 from datetime import datetime
 from typing import Callable, Optional
 
 from core.disk_info import DiskInfo, get_all_disks
 from core.safety import validate_operation, SafetyError
 from core.history import HistoryEntry, append
+from utils.shell_suppress import (
+    restore_shell_notification,
+    suppress_autoplay_for_drive,
+)
 
 
 class DiskPartEngine:
@@ -20,12 +25,17 @@ class DiskPartEngine:
     Streams output line-by-line via a callback for live terminal display.
     """
 
-    def __init__(self, output_callback: Callable[[str, str], None]):
+    def __init__(
+        self,
+        output_callback: Callable[[str, str], None],
+        on_complete_callback: Optional[Callable[[bool], None]] = None,
+    ):
         """
         output_callback(line: str, level: str) - called for each output line.
         level: "info" | "success" | "error" | "warning" | "cmd"
         """
         self.output_callback = output_callback
+        self.on_complete_callback = on_complete_callback
         self._current_script_path: Optional[str] = None
 
     def build_script(self, disk_index: int, operations: list[str]) -> str:
@@ -100,7 +110,20 @@ class DiskPartEngine:
             raise SafetyError(msg)
 
         tmp_path = None
+        original_letter = disk.drive_letter.rstrip("\\") if disk.drive_letter else None
         try:
+            if original_letter:
+                self.output_callback(
+                    f"> dismounting {original_letter}\\ before operation...", "cmd"
+                )
+                suppress_autoplay_for_drive(original_letter)
+                subprocess.run(
+                    ["mountvol", f"{original_letter}\\", "/p"],
+                    capture_output=True,
+                    shell=False,
+                )
+                time.sleep(0.8)
+
             with tempfile.NamedTemporaryFile(
                 mode="w", suffix=".txt", delete=False, encoding="utf-8"
             ) as tmp:
@@ -134,6 +157,7 @@ class DiskPartEngine:
                         error_msg=error_msg,
                     )
                 )
+                self._notify_complete(True)
                 return True
 
             self.output_callback(
@@ -151,6 +175,7 @@ class DiskPartEngine:
                     error_msg=error_msg,
                 )
             )
+            self._notify_complete(False)
             return False
         except SafetyError:
             return False
@@ -168,14 +193,40 @@ class DiskPartEngine:
                     error_msg=error_msg,
                 )
             )
+            self._notify_complete(False)
             return False
         finally:
+            restore_letter = self._resolve_restore_letter(disk, original_letter)
+            if restore_letter:
+                try:
+                    restore_shell_notification(restore_letter)
+                except Exception:
+                    pass
             self._current_script_path = None
             if tmp_path and os.path.exists(tmp_path):
                 try:
                     os.remove(tmp_path)
                 except Exception:
                     pass
+
+    def _resolve_restore_letter(
+        self, disk: DiskInfo, original_letter: Optional[str]
+    ) -> Optional[str]:
+        try:
+            for refreshed_disk in get_all_disks():
+                if refreshed_disk.index == disk.index and refreshed_disk.drive_letter:
+                    return refreshed_disk.drive_letter.rstrip("\\")
+        except Exception:
+            pass
+        return original_letter
+
+    def _notify_complete(self, success: bool):
+        if self.on_complete_callback is None:
+            return
+        try:
+            self.on_complete_callback(success)
+        except Exception:
+            pass
 
     def _stream_output(self, proc: subprocess.Popen):
         """Reads stdout in real time and calls output_callback per line."""
@@ -247,16 +298,18 @@ class DiskPartEngine:
             self.output_callback("ISO path not found.", "error")
             return False
 
-        script = self.build_script(
-            disk.index,
+        operations = ["clean"]
+        if (disk.partition_style or "").upper() != "MBR":
+            operations.append("convert mbr")
+        operations.extend(
             [
-                "clean",
                 "create partition primary",
                 "format fs=fat32 quick",
                 "active",
                 "assign",
-            ],
+            ]
         )
+        script = self.build_script(disk.index, operations)
         if not self.execute(script, disk, "format"):
             return False
 

@@ -30,7 +30,10 @@ class DiskWizardApp(ctk.CTk):
 
         # Terminal widget created first - engine needs its callback
         self.terminal = TerminalPanel(self)
-        self.engine = DiskPartEngine(output_callback=self.terminal.log)
+        self.engine = DiskPartEngine(
+            output_callback=self.terminal.log,
+            on_complete_callback=self._on_operation_complete,
+        )
 
         self._build_layout()
 
@@ -129,6 +132,11 @@ class DiskWizardApp(ctk.CTk):
     def _refresh_drives(self):
         self.drive_panel.refresh()
         self.sidebar.update_disk_info(self.selected_disk)
+
+    def _on_operation_complete(self, success: bool):
+        self.after(1500, self._refresh_drives)
+        if success:
+            self.after(1500, lambda: self.sidebar.update_disk_info(self.selected_disk))
 
     def _open_disk_mgmt(self):
         try:
