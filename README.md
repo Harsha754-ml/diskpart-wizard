@@ -40,6 +40,18 @@ DiskWizard/
 └── utils/
 ```
 
+## Architecture
+```mermaid
+flowchart LR
+	UI[CustomTkinter UI] -->|actions| SAFETY[Safety gates]
+	SAFETY -->|approved ops| DISKPART[DiskPart scripts]
+	DISKPART -->|output| TERM[Live terminal output]
+	DISKPART -->|audit| HISTORY[History log]
+	CORE[Core services] --> SAFETY
+	CORE --> DISKPART
+	CORE --> HISTORY
+```
+
 ## Setup
 ```
 pip install -r requirements.txt
