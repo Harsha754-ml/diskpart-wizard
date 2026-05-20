@@ -13,13 +13,21 @@ from ui.theme import COLORS, FONT
 class DriveCard(ctk.CTkFrame):
     def __init__(self, parent, disk: DiskInfo, on_select: Callable[[DiskInfo], None]):
         bg = COLORS["bg_secondary"]
-        super().__init__(
-            parent,
-            fg_color=bg,
-            corner_radius=8,
-            border_width=1,
-            border_color=COLORS["border"],
-        )
+        try:
+            super().__init__(
+                parent,
+                fg_color=bg,
+                corner_radius=8,
+                border_width=1,
+                border_color=COLORS["border"],
+            )
+        except Exception:
+            super().__init__(
+                parent,
+                fg_color=bg,
+                corner_radius=8,
+                border_color=COLORS["border"],
+            )
 
         self.disk = disk
         self.on_select = on_select
@@ -103,7 +111,10 @@ class DriveCard(ctk.CTkFrame):
         self.selected = selected
         border = COLORS["accent"] if selected else COLORS["border"]
         bg = COLORS["bg_tertiary"] if selected else COLORS["bg_secondary"]
-        self.configure(border_color=border, border_width=2 if selected else 1)
+        try:
+            self.configure(border_color=border, border_width=2 if selected else 1)
+        except Exception:
+            self.configure(border_color=border)
         self.configure(fg_color=bg)
 
     def _handle_click(self, _event):

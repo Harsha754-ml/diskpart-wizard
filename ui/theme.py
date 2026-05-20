@@ -79,6 +79,7 @@ def _build_theme_json() -> dict:
         "CTkFrame": {
             "fg_color": [COLORS["bg_secondary"], COLORS["bg_secondary"]],
             "border_color": [COLORS["border"], COLORS["border"]],
+            "border_width": [1, 1],
         },
         "CTkLabel": {
             "text_color": [COLORS["text_primary"], COLORS["text_primary"]],
