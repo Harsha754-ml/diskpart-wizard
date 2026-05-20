@@ -6,6 +6,7 @@ import json
 import os
 import tempfile
 import ctypes
+from copy import deepcopy
 from typing import Optional
 import tkinter.font as tkfont
 
@@ -71,83 +72,132 @@ def FONT(size: int = 12, weight: str = "normal") -> tuple:
     return (family, size, weight)
 
 
+def _base_theme_json() -> dict:
+    blue_theme_path = os.path.join(
+        os.path.dirname(ctk.__file__), "assets", "themes", "blue.json"
+    )
+    with open(blue_theme_path, "r", encoding="utf-8") as theme_file:
+        return json.load(theme_file)
+
+
 def _build_theme_json() -> dict:
-    return {
-        "CTk": {
-            "fg_color": [COLORS["bg_primary"], COLORS["bg_primary"]],
-        },
-        "CTkFrame": {
+    theme = deepcopy(_base_theme_json())
+    theme["CTk"]["fg_color"] = [COLORS["bg_primary"], COLORS["bg_primary"]]
+    theme["CTkFrame"].update(
+        {
             "fg_color": [COLORS["bg_secondary"], COLORS["bg_secondary"]],
+            "top_fg_color": [COLORS["bg_secondary"], COLORS["bg_secondary"]],
             "border_color": [COLORS["border"], COLORS["border"]],
             "border_width": 1,
-        },
-        "CTkLabel": {
+            "corner_radius": 8,
+        }
+    )
+    theme["CTkLabel"].update(
+        {
+            "fg_color": ["transparent", "transparent"],
             "text_color": [COLORS["text_primary"], COLORS["text_primary"]],
-        },
-        "CTkButton": {
+        }
+    )
+    theme["CTkButton"].update(
+        {
             "fg_color": [COLORS["bg_tertiary"], COLORS["bg_tertiary"]],
             "hover_color": [COLORS["bg_secondary"], COLORS["bg_secondary"]],
             "border_color": [COLORS["border"], COLORS["border"]],
             "text_color": [COLORS["text_primary"], COLORS["text_primary"]],
             "text_color_disabled": [COLORS["text_muted"], COLORS["text_muted"]],
-        },
-        "CTkEntry": {
+        }
+    )
+    theme["CTkEntry"].update(
+        {
             "fg_color": [COLORS["bg_tertiary"], COLORS["bg_tertiary"]],
             "border_color": [COLORS["border"], COLORS["border"]],
             "text_color": [COLORS["text_primary"], COLORS["text_primary"]],
             "placeholder_text_color": [COLORS["text_muted"], COLORS["text_muted"]],
-        },
-        "CTkTextbox": {
+        }
+    )
+    theme["CTkTextbox"].update(
+        {
             "fg_color": [COLORS["bg_tertiary"], COLORS["bg_tertiary"]],
             "text_color": [COLORS["text_primary"], COLORS["text_primary"]],
             "border_color": [COLORS["border"], COLORS["border"]],
             "scrollbar_button_color": [COLORS["bg_secondary"], COLORS["bg_secondary"]],
             "scrollbar_button_hover_color": [COLORS["bg_tertiary"], COLORS["bg_tertiary"]],
-        },
-        "CTkProgressBar": {
+        }
+    )
+    theme["CTkProgressBar"].update(
+        {
             "fg_color": [COLORS["bg_secondary"], COLORS["bg_secondary"]],
             "progress_color": [COLORS["accent"], COLORS["accent"]],
             "border_color": [COLORS["border"], COLORS["border"]],
-        },
-        "CTkOptionMenu": {
+        }
+    )
+    theme["CTkOptionMenu"].update(
+        {
             "fg_color": [COLORS["bg_tertiary"], COLORS["bg_tertiary"]],
             "button_color": [COLORS["bg_secondary"], COLORS["bg_secondary"]],
             "button_hover_color": [COLORS["bg_tertiary"], COLORS["bg_tertiary"]],
             "text_color": [COLORS["text_primary"], COLORS["text_primary"]],
-            "dropdown_fg_color": [COLORS["bg_secondary"], COLORS["bg_secondary"]],
-            "dropdown_hover_color": [COLORS["bg_tertiary"], COLORS["bg_tertiary"]],
-        },
-        "CTkCheckBox": {
+            "text_color_disabled": [COLORS["text_muted"], COLORS["text_muted"]],
+        }
+    )
+    theme["CTkCheckBox"].update(
+        {
             "fg_color": [COLORS["accent"], COLORS["accent"]],
             "hover_color": [COLORS["accent_dim"], COLORS["accent_dim"]],
             "border_color": [COLORS["border"], COLORS["border"]],
             "text_color": [COLORS["text_primary"], COLORS["text_primary"]],
+            "text_color_disabled": [COLORS["text_muted"], COLORS["text_muted"]],
             "checkmark_color": [COLORS["bg_primary"], COLORS["bg_primary"]],
-        },
-        "CTkSwitch": {
+        }
+    )
+    theme["CTkSwitch"].update(
+        {
+            "fg_color": [COLORS["bg_tertiary"], COLORS["bg_tertiary"]],
             "progress_color": [COLORS["accent"], COLORS["accent"]],
             "button_color": [COLORS["bg_secondary"], COLORS["bg_secondary"]],
             "button_hover_color": [COLORS["bg_tertiary"], COLORS["bg_tertiary"]],
             "text_color": [COLORS["text_primary"], COLORS["text_primary"]],
-        },
-        "CTkScrollbar": {
+            "text_color_disabled": [COLORS["text_muted"], COLORS["text_muted"]],
+        }
+    )
+    theme["CTkScrollbar"].update(
+        {
             "fg_color": [COLORS["bg_secondary"], COLORS["bg_secondary"]],
             "button_color": [COLORS["bg_tertiary"], COLORS["bg_tertiary"]],
             "button_hover_color": [COLORS["border"], COLORS["border"]],
-        },
-        "CTkSlider": {
+        }
+    )
+    theme["CTkSlider"].update(
+        {
+            "fg_color": [COLORS["bg_secondary"], COLORS["bg_secondary"]],
             "progress_color": [COLORS["accent"], COLORS["accent"]],
             "button_color": [COLORS["bg_tertiary"], COLORS["bg_tertiary"]],
             "button_hover_color": [COLORS["bg_secondary"], COLORS["bg_secondary"]],
-        },
-        "CTkComboBox": {
+        }
+    )
+    theme["CTkComboBox"].update(
+        {
             "fg_color": [COLORS["bg_tertiary"], COLORS["bg_tertiary"]],
             "border_color": [COLORS["border"], COLORS["border"]],
+            "button_color": [COLORS["bg_secondary"], COLORS["bg_secondary"]],
+            "button_hover_color": [COLORS["bg_tertiary"], COLORS["bg_tertiary"]],
             "text_color": [COLORS["text_primary"], COLORS["text_primary"]],
-            "dropdown_fg_color": [COLORS["bg_secondary"], COLORS["bg_secondary"]],
-            "dropdown_hover_color": [COLORS["bg_tertiary"], COLORS["bg_tertiary"]],
-        },
+            "text_color_disabled": [COLORS["text_muted"], COLORS["text_muted"]],
+        }
+    )
+    theme["DropdownMenu"].update(
+        {
+            "fg_color": [COLORS["bg_secondary"], COLORS["bg_secondary"]],
+            "hover_color": [COLORS["bg_tertiary"], COLORS["bg_tertiary"]],
+            "text_color": [COLORS["text_primary"], COLORS["text_primary"]],
+        }
+    )
+    theme["CTkFont"] = {
+        "macOS": {"family": _JETBRAINS_FAMILY, "size": 13, "weight": "normal"},
+        "Windows": {"family": _JETBRAINS_FAMILY, "size": 13, "weight": "normal"},
+        "Linux": {"family": _JETBRAINS_FAMILY, "size": 13, "weight": "normal"},
     }
+    return theme
 
 
 def apply_theme():
