@@ -8,6 +8,7 @@ from tkinter import BooleanVar
 
 from ui.theme import COLORS, FONT
 from core.disk_info import DiskInfo
+from utils.logger import get_logger
 
 
 def _center_window(win: ctk.CTkToplevel, parent: ctk.CTkBaseClass):
@@ -27,6 +28,16 @@ def confirm_destructive(parent, disk: DiskInfo, operation: str) -> bool:
     - Cancel button
     Returns True only if user checked the box AND clicked Confirm.
     """
+    logger = get_logger("diskwizard.dialogs")
+    assert disk is not None, "confirm_destructive requires a disk"
+    assert operation, "confirm_destructive requires an operation name"
+    logger.info(
+        "confirm_destructive triggered: operation=%s disk_index=%s model=%s",
+        operation,
+        disk.index,
+        disk.model,
+    )
+
     result = {"value": False}
 
     dialog = ctk.CTkToplevel(parent)
@@ -81,10 +92,20 @@ def confirm_destructive(parent, disk: DiskInfo, operation: str) -> bool:
 
     def _confirm():
         if confirm_var.get():
+            logger.info(
+                "confirm_destructive confirmed: operation=%s disk_index=%s",
+                operation,
+                disk.index,
+            )
             result["value"] = True
             dialog.destroy()
 
     def _cancel():
+        logger.info(
+            "confirm_destructive cancelled: operation=%s disk_index=%s",
+            operation,
+            disk.index,
+        )
         dialog.destroy()
 
     confirm_btn = ctk.CTkButton(

@@ -34,7 +34,31 @@ class DiskPartEngine:
         Always starts with `select disk N`.
         operations: list of raw DiskPart command strings.
         """
-        lines = [f"select disk {disk_index}"] + operations + ["exit"]
+        normalized_ops: list[str] = []
+        partition_selected = False
+        pending_partition_select = False
+        for op in operations:
+            clean_op = op.strip()
+            lowered = clean_op.lower()
+            if lowered == "create partition primary":
+                normalized_ops.append(clean_op)
+                partition_selected = False
+                pending_partition_select = True
+                continue
+            if lowered.startswith("select partition"):
+                partition_selected = True
+                pending_partition_select = False
+            if (
+                pending_partition_select
+                and not partition_selected
+                and (lowered.startswith("format") or lowered.startswith("assign"))
+            ):
+                normalized_ops.append("select partition 1")
+                partition_selected = True
+                pending_partition_select = False
+            normalized_ops.append(clean_op)
+
+        lines = [f"select disk {disk_index}"] + normalized_ops + ["exit"]
         return "\n".join(lines)
 
     def execute(self, script: str, disk: DiskInfo, op_name: str) -> bool:

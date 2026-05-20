@@ -67,6 +67,14 @@ class OperationPanel(ctk.CTkFrame):
         )
         header.pack(anchor="w", padx=12, pady=(10, 8))
 
+        self.disk_banner = ctk.CTkLabel(
+            self,
+            text="OPERATING ON: NO DISK SELECTED",
+            font=FONT(12, "bold"),
+            text_color=COLORS["accent"],
+        )
+        self.disk_banner.pack(anchor="w", padx=12, pady=(0, 10))
+
         grid = ctk.CTkFrame(self, fg_color=COLORS["bg_secondary"])
         grid.pack(fill="x", padx=12, pady=(0, 12))
         grid.grid_columnconfigure((0, 1, 2), weight=1)
@@ -129,6 +137,9 @@ class OperationPanel(ctk.CTkFrame):
             row=2,
             column=0,
             color=COLORS["bg_tertiary"],
+            text_color=COLORS["text_primary"],
+            border_width=1,
+            border_color=COLORS["border"],
             cmd=self._assign_letter,
             tooltip="Assigns or changes the drive letter.",
         )
@@ -157,6 +168,9 @@ class OperationPanel(ctk.CTkFrame):
             row=3,
             column=0,
             color=COLORS["bg_tertiary"],
+            text_color=COLORS["text_primary"],
+            border_width=1,
+            border_color=COLORS["border"],
             cmd=self._make_bootable,
             tooltip="Formats and copies ISO contents. Requires ISO file selection.",
         )
@@ -172,12 +186,27 @@ class OperationPanel(ctk.CTkFrame):
 
         self.refresh_for_disk(None)
 
-    def _button(self, parent, text, row, column, color, cmd, tooltip):
+    def _button(
+        self,
+        parent,
+        text,
+        row,
+        column,
+        color,
+        cmd,
+        tooltip,
+        text_color=COLORS["text_primary"],
+        border_width=0,
+        border_color=None,
+    ):
         btn = ctk.CTkButton(
             parent,
             text=text,
             fg_color=color,
             hover_color=COLORS["bg_primary"],
+            text_color=text_color,
+            border_width=border_width,
+            border_color=border_color,
             command=cmd,
         )
         btn.grid(row=row, column=column, padx=6, pady=6, sticky="ew")
@@ -186,6 +215,12 @@ class OperationPanel(ctk.CTkFrame):
         return btn
 
     def refresh_for_disk(self, disk: DiskInfo | None):
+        if disk:
+            self.disk_banner.configure(
+                text=f"OPERATING ON: DISK {disk.index} — {disk.model}"
+            )
+        else:
+            self.disk_banner.configure(text="OPERATING ON: NO DISK SELECTED")
         enabled = bool(disk) and not disk.is_system_disk
         for btn in self.buttons:
             btn.configure(state="normal" if enabled else "disabled")

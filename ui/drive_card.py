@@ -4,10 +4,46 @@
 # Selected disk gets accent border.
 
 import customtkinter as ctk
+import tkinter as tk
 from typing import Callable
+import psutil
 
 from core.disk_info import DiskInfo
 from ui.theme import COLORS, FONT
+
+
+class CTkToolTip:
+    def __init__(self, widget, text: str):
+        self.widget = widget
+        self.text = text
+        self.tip = None
+        widget.bind("<Enter>", self._show)
+        widget.bind("<Leave>", self._hide)
+
+    def _show(self, _event):
+        if self.tip or not self.text:
+            return
+        self.tip = tk.Toplevel(self.widget)
+        self.tip.wm_overrideredirect(True)
+        self.tip.configure(bg=COLORS["bg_tertiary"])
+        label = tk.Label(
+            self.tip,
+            text=self.text,
+            bg=COLORS["bg_tertiary"],
+            fg=COLORS["text_primary"],
+            font=FONT(9),
+            padx=6,
+            pady=4,
+        )
+        label.pack()
+        x = self.widget.winfo_rootx() + 10
+        y = self.widget.winfo_rooty() + self.widget.winfo_height() + 6
+        self.tip.wm_geometry(f"+{x}+{y}")
+
+    def _hide(self, _event):
+        if self.tip:
+            self.tip.destroy()
+            self.tip = None
 
 
 class DriveCard(ctk.CTkFrame):
@@ -67,11 +103,12 @@ class DriveCard(ctk.CTkFrame):
 
         model = ctk.CTkLabel(
             self,
-            text=self.disk.model,
+            text=self._truncate_model(self.disk.model),
             font=FONT(11),
             text_color=COLORS["text_secondary"],
         )
         model.pack(anchor="w", padx=10)
+        CTkToolTip(model, self.disk.model)
 
         bar_row = ctk.CTkFrame(self, fg_color="transparent")
         bar_row.pack(fill="x", padx=10, pady=(6, 4))
@@ -83,11 +120,13 @@ class DriveCard(ctk.CTkFrame):
             height=10,
         )
         self.progress.pack(side="left", fill="x", expand=True)
-        self.progress.set(1.0)
+
+        ratio, usage_text = self._usage_display()
+        self.progress.set(ratio)
 
         size_label = ctk.CTkLabel(
             bar_row,
-            text=f"{self.disk.size_gb:.0f} GB",
+            text=usage_text,
             font=FONT(10),
             text_color=COLORS["text_secondary"],
         )
@@ -120,3 +159,22 @@ class DriveCard(ctk.CTkFrame):
     def _handle_click(self, _event):
         if not self.disk.is_system_disk:
             self.on_select(self.disk)
+
+    def _truncate_model(self, model: str) -> str:
+        if len(model) <= 28:
+            return model
+        return f"{model[:28]}..."
+
+    def _usage_display(self) -> tuple[float, str]:
+        if not self.disk.drive_letter:
+            return 0.0, "No data"
+        try:
+            usage = psutil.disk_usage(f"{self.disk.drive_letter}\\")
+        except Exception:
+            return 0.0, "No data"
+        if usage.total <= 0:
+            return 0.0, "No data"
+        ratio = max(0.0, min(1.0, usage.used / usage.total))
+        used_gb = usage.used / (1024**3)
+        total_gb = usage.total / (1024**3)
+        return ratio, f"{used_gb:.0f}/{total_gb:.0f} GB"

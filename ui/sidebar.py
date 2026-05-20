@@ -56,8 +56,8 @@ class Sidebar(ctk.CTkFrame):
             indicator = ctk.CTkFrame(
                 row,
                 fg_color=COLORS["accent"] if key == self.active_page else COLORS["bg_secondary"],
-                width=4,
-                corner_radius=2,
+                width=3 if key == self.active_page else 0,
+                corner_radius=0,
             )
             indicator.pack(side="left", fill="y")
 
@@ -90,6 +90,7 @@ class Sidebar(ctk.CTkFrame):
         self.active_page = page
         for key, (_row, indicator) in self.nav_rows.items():
             indicator.configure(
-                fg_color=COLORS["accent"] if key == page else COLORS["bg_secondary"]
+                fg_color=COLORS["accent"] if key == page else COLORS["bg_secondary"],
+                width=3 if key == page else 0,
             )
         self.on_navigate(page)
